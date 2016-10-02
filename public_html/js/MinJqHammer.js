@@ -3,8 +3,8 @@
   
   var hammerEventsTest = /^(tap|doubletap|swipe|rotate|p(an|inch|ress))\w*/;
   
-  var dataHammerKey = 'MinJqHammer';
-  var proto = (window.EventTarget || window.Node).prototype;
+  var dataHammerKey = '$.MinJqHammer';
+  var proto = $.fnEvent;
   var originalOn = proto.on;
   var originalOff = proto.off;
   
@@ -27,7 +27,9 @@
     if( hammerEventsTest.test(event) ){
       if( !this.data(dataHammerKey) ) this.hammer(true);
       var ham = this.data(dataHammerKey);
-      ham.on(event, newCall = callback.bind($(this)));
+      newCall = callback.bind($(this));
+      $.putCallback(this, event, callback, newCall);
+      ham.on(event, newCall);
     }else{
       return originalOn.apply(this, arguments);
     }
@@ -37,7 +39,9 @@
     if( hammerEventsTest.test(event) ){
       if( !this.data(dataHammerKey) ) this.hammer(true);
       var ham = this.data(dataHammerKey);
-      return ham.off(event, callback);
+      var newCall = $.getCallback(this, event, callback);
+      $.removeCallback(this, event, callback);
+      return ham.off(event, newCall);
     }else{
       return originalOff.apply(this, arguments);
     }
@@ -46,12 +50,7 @@
   proto.bind = proto.on;
   proto.unbind = proto.off;
   
-  $.fn.hammer = function(recoginizer, config){
-    for(var g in this){
-      this[g].hammer(recoginizer, config);
-    }
-    return this;
-  };
+  $._normalElementCall('hammer', $.MODE_MIX_GETTER_FIRST, null);
   
   $.blockProperties();
 })($$,Hammer);

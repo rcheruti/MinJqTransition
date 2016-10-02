@@ -35,29 +35,14 @@
   //===========================================================================
   //          EventTarget prototype
   
-  var onCallbacksKey = 'onCallbacks';
-  
   // EventTarget para a maioria dos navegadores
   // Node para o IE!
   var EventTypeProto = (window.EventTarget || window.Node).prototype;
   EventTypeProto.off = function (eventName, callback, useCapture) {
     var newCallback = callback;
     if( $.isElement(this) ){
-      var data = this.data(onCallbacksKey);
       var key = eventName + useCapture;
-      if( !data || !data[key] ) return null;
-      var i = 0, found = false;
-      for(; i < data[key].from.length; i++){
-        if( data[key].from[i] === callback ){
-          found = true;
-          data[key].from.splice(i,1);
-          break;
-        }
-      }
-      if( !found ) return null;
-      newCallback = data[key].to[i];
-      data[key].to.splice(i,1);
-      this.data(onCallbacksKey, data);
+      $.removeCallback(this, key, callback);
     }
     return this.removeEventListener(eventName, newCallback, useCapture);
   };
@@ -65,13 +50,8 @@
     var newCallback = callback;
     if( $.isElement(this) ){
       newCallback = callback.bind( $(this) );
-      var data = this.data(onCallbacksKey);
-      if( !data ) data = {};
       var key = eventName + useCapture;
-      if( !data[key] ) data[key] = { from:[], to:[] };
-      data[key].from.push( callback );
-      data[key].to.push( newCallback );
-      this.data(onCallbacksKey, data);
+      $.putCallback(this, key, callback, newCallback);
     }
     this.addEventListener(eventName, newCallback, useCapture);
     return EventTypeProto.off.bind(this, eventName, callback, useCapture);
@@ -491,12 +471,53 @@
   };
   var proto = ($.prototype = new Array());
   $.fn = proto;
+  $.fnElement = ElementProto;
+  $.fnEvent = EventTypeProto;
   //$.constructor = Array;
   
   $.blockProperties = function(){
     for(var g in proto){ 
       _defineProperty(proto, 5, g);
     }
+  };
+  
+  var callbacksKey = '$.callbacks';
+  $.putCallback = function(jq, key, callback, newCallback){
+    var data = jq.data(callbacksKey);
+    if( !data ) data = {};
+    if( !data[key] ) data[key] = { from:[], to:[] };
+    data[key].from.push(callback);
+    data[key].to.push(newCallback);
+    jq.data(callbacksKey, data);
+    return this;
+  };
+  $.getCallback = function(jq, key, callback){
+    var data = jq.data(callbacksKey);
+    if( !data || !data[key] ){
+      var from = data[key].from, to = data[key].to,
+        i = 0, len = data[key].from.length;
+      for(; i < len; i++){
+        if( from[i] === callback ){
+          return to[i];
+        }
+      }
+    }
+    return null;
+  };
+  $.removeCallback = function(jq, key, callback){
+    var data = jq.data(callbacksKey);
+    if( data && data[key] ){
+      var from = data[key].from, to = data[key].to,
+        i = 0, len = data[key].from.length;
+      for(; i < len; i++){
+        if( from[i] === callback ){
+          from.splice(i,1);
+          to.splice(i,1);
+          break;
+        }
+      }
+    }
+    return this;
   };
   
     // Adicionar funções auxiliares:
@@ -761,7 +782,17 @@
     GETTER_FIRST = 3,
     MIX = 4,
     MIX_GETTER_FIRST = 5;
-    
+  
+  $.MODE_GETTER = GETTER; // Method is a getter only (returns Array with the return values)
+  $.MODE_SETTER = SETTER; // Method is a setter only (returns 'self')
+  $.MODE_GETTER_FIRST = GETTER_FIRST; // Getter on the first element of the Array (returns the value)
+  $.MODE_MIX = MIX; // No impl !!!
+  $.MODE_MIX_GETTER_FIRST = MIX_GETTER_FIRST; // Setter when has params, returning 'self'. If no params, then getter on first
+  
+  $._normalElementCall = function(funcName, mode, valorQuandoLenZero){
+    return _normalElementCall(proto, funcName, mode, valorQuandoLenZero);
+  };
+  
   var funcs = [
       ['addClass'         ,SETTER             ],
       ['after'            ,GETTER_FIRST       ,null],

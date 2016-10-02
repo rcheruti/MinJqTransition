@@ -3,7 +3,7 @@
   var dataKey = 'TweenAnim';
   var computKey = 'computedValue';
   
-  $.fn.animPos = function(){
+  $.fnElement.animPos = function(){
     var pos = this.data(dataKey);
     if(!pos) pos = { x:0, y:0, z:0 };
     return pos;
@@ -32,7 +32,7 @@
    * @param {object} config Object with configurations.
    * @returns {object} MinJq Object, the "this" reference.
    */
-  $.fn.anim = function(config){
+  $.fnElement.anim = function(config){
     if(!config) config = {};
     var momentum = !config.to;
     
@@ -76,7 +76,7 @@
       from.x = x;
       from.y = y;
       from.z = z;
-      that[0].style.transform = ' translate3D('+ (x) +'px, '+ (y) +'px, '+ (z) +'px) ';
+      that.style.transform = ' translate3D('+ (x) +'px, '+ (y) +'px, '+ (z) +'px) ';
     });
     tween.start();
     config.tween = tween;
@@ -119,7 +119,7 @@
       var x = ix + this.cx * difx ;
       var y = iy + this.cy * dify ;
       var z = iz + this.cz * difz ;
-      that[0].style.transform = ' translate3D('+ (x) +'px, '+ (y) +'px, '+ (z) +'px) ';
+      that.style.transform = ' translate3D('+ (x) +'px, '+ (y) +'px, '+ (z) +'px) ';
       that.data(dataKey, { x:x, y:y, z:z });
     });
     tween.start();
@@ -128,5 +128,7 @@
   }
   
   
+  $._normalElementCall('animPos', $.MODE_GETTER_FIRST, { x:0, y:0, z:0 });
+  $._normalElementCall('anim', $.MODE_SETTER);
   $.blockProperties();
 })($$);
