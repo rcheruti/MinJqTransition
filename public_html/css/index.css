@@ -1,0 +1,57 @@
+html, body{
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+
+.quadro{
+  position: relative;
+}
+
+.bloco{
+  width: 100px;
+  height: 100px;
+  border: 1px solid darkred;
+  background: rgba(164,33,33, 0.4);
+  position: absolute;
+  left: 40px;
+  top: 80px;
+}
+.bloco1{
+  left: 240px;
+}
+.bloco2{
+  border: 1px solid blue;
+}
+.dest{
+  width: 20px;
+  height: 20px;
+  border: 1px solid blue;
+  background: rgba(33,33,200, 0.4);
+  position: absolute;
+  left: 140px;
+  top: 220px;
+}
+
+
+.quadro1{
+  height: 100px;
+  width: 400px;
+  margin: 80px 30px;
+}
+.quadro1 .selecionadoPosicao{
+  position: absolute;
+  left: 10%;
+  top: -30px;
+}
+.quadro1 .item{
+  width: 20%;
+  height: 40px;
+  float: left;
+  margin: 0 4% 10px 0 ;
+  border: 1px solid darkorange;
+  background: rgba(255,255,0,0.5);
+  cursor: pointer;
+}
