@@ -493,6 +493,12 @@
   $.fn = proto;
   //$.constructor = Array;
   
+  $.blockProperties = function(){
+    for(var g in proto){ 
+      _defineProperty(proto, 5, g);
+    }
+  };
+  
     // Adicionar funções auxiliares:
   $.is$ = function(val){ return val instanceof $; };
   $.isArray = function(val){ return Array.isArray(val); };
@@ -822,9 +828,8 @@
   };
   
     // bloquear a iteração desses elementos:
-  for(var g in proto){ 
-    _defineProperty(proto, 5, g);
-  }
+  $.blockProperties();
+  
 
 
   //===========================================================================

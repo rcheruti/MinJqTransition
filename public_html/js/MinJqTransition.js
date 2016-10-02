@@ -127,4 +127,6 @@
     return config;
   }
   
+  
+  $.blockProperties();
 })($$);
