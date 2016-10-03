@@ -1,19 +1,32 @@
 
 (function($){
-  var dataKey = 'TweenAnim';
-  var computKey = 'computedValue';
+  var configKey = '$.MinJqTransition.Config';
   
-  $.fnElement.animPos = function(){
-    var pos = this.data(dataKey);
-    if(!pos) pos = { x:0, y:0, z:0 };
-    return pos;
-  };
+  function _defaultConfig(that){
+    var myConf = {};
+    that.data(configKey, myConf);
+    myConf.autoStop = true;
+    myConf.vX = 1;
+    myConf.vY = 1;
+    myConf.vZ = 0;
+    myConf.correction = 10 ;
+    myConf.easing = TWEEN.Easing.Quadratic.Out;
+    myConf.interpolation = TWEEN.Interpolation.Bezier;
+    myConf.time = 300;
+    myConf.curveX = 1;
+    myConf.curveY = 1;
+    myConf.curveZ = 1;
+    return myConf;
+  }
+  
   /**
    * Parâmetros de configuração:
    * - from : Pode ser um objeto com { x, y, z }. 
    *          Caso não seja informado, usará a última posição de animação.
    * - to : Pode ser um objeto com { x, y, z } ou um objeto do MinJq, ou um "Element" do DOM.
    *        Caso não seja informado, então a animação será de "momentum".
+   * - autoStop : Informa se a animação anterior deve ser parada automaticamente
+   *              antes de começar a nova (padrão para "true").
    * - vX, vY, vZ : velocidades de movimentação, caso seja usado "momentum".
    * - correction : número que será multiplicado pelo tempo atual quando for usado "momentum".
    *                Isso fará com que a animação do momentum seja mais rápida ou devagar 
@@ -23,43 +36,60 @@
    * - time : tempo que será executada a animação.
    * - interpolation : O script de interpolação.
    *                   Deve ser um dos modelos disponíveis na lib TweenJs (Interpolation).
-   * - curve : um vetor com as configurações da curva de interpolação.
+   * - curveX, curveY, curveZ : um vetor com as configurações da curva de interpolação.
    *           Em bezier será usado: P0(0,0) - [ P1(x,y) - P2(x,y) ] - P3(1,1).
    *           Esses valores devem estar entre 0 e 1, o ponto inicial e final não deve
    *            ser informado, eles serão 0 e 1 sempre (respectivamente).
    * 
    * 
    * @param {object} config Object with configurations.
-   * @returns {object} MinJq Object, the "this" reference.
+   * @returns {object} Object with configurations.
    */
+  $.fnElement.animConfig = function(config){
+    var myConf = this.data(configKey);
+    if( !myConf ){
+      myConf = _defaultConfig(this);
+    }
+    if( $.isObj(config) ){
+      if( $.isDef(config.autoStop) ) myConf.autoStop = !!config.autoStop;
+      if( $.isDef(config.vX) ) myConf.vX = config.vX;
+      if( $.isDef(config.vY) ) myConf.vY = config.vY;
+      if( $.isDef(config.vZ) ) myConf.vZ = config.vZ;
+      if( $.isDef(config.curveX) ) myConf.curveX = config.curveX;
+      if( $.isDef(config.curveY) ) myConf.curveY = config.curveY;
+      if( $.isDef(config.curveZ) ) myConf.curveZ = config.curveZ;
+      if( $.isDef(config.correction) ) myConf.correction = config.correction;
+      if( $.isDef(config.easing) ) myConf.easing = config.easing;
+      if( $.isDef(config.interpolation) ) myConf.interpolation = config.interpolation;
+      if( $.isDef(config.time) ) myConf.time = config.time;
+    }
+    return myConf;
+  };
   $.fnElement.anim = function(config){
     if(!config) config = {};
     var momentum = !config.to;
+    var myConf = this.animConfig(config);
     
-    config.from = config.from || this.animPos();
-    config.to = config.to || {x: 0, y: 0, z: 0};
-    config.correction = config.correction || 10 ;
-    if( $.isUndef(config.vX) ) config.vX = 1;
-    if( $.isUndef(config.vY) ) config.vY = 0;
-    config.vZ = config.vZ || 0;
-    config.easing = config.easing || TWEEN.Easing.Quadratic.Out;
-    config.interpolation = config.interpolation || TWEEN.Interpolation.Bezier;
-    config.time = config.time || 300;
-    if(!config.from.x) config.from.x = 0;
-    if(!config.from.y) config.from.y = 0;
-    if(!config.from.z) config.from.z = 0;
+    myConf.from = config.from || myConf.pos || {x: 0, y: 0, z: 0};
+    myConf.to = config.to || {x: 0, y: 0, z: 0};
+    
+    myConf.from.x = myConf.from.x||0;
+    myConf.from.y = myConf.from.y||0;
+    myConf.from.z = myConf.from.z||0;
     var isEl = false;
-    if( !momentum && ($.is$(config.to) || $.isElement(config.to)) ){
+    if( !momentum && ($.is$(myConf.to) || $.isElement(myConf.to)) ){
       isEl = true;
     }else{
-      if(!config.to.x) config.to.x = 0;
-      if(!config.to.y) config.to.y = 0;
-      if(!config.to.z) config.to.z = 0;
+      if(!myConf.to.x) myConf.to.x = 0;
+      if(!myConf.to.y) myConf.to.y = 0;
+      if(!myConf.to.z) myConf.to.z = 0;
     }
     
+    //---  agora começa as execuções:
+    if( myConf.autoStop && myConf.tween ) myConf.tween.stop();
     
-    if( momentum ) _animMomentum.call(this, config);
-    else _animTo.call(this, config, isEl);
+    if( momentum ) _animMomentum.call(this, myConf);
+    else _animTo.call(this, myConf, isEl);
     return this;
   };
   
@@ -77,6 +107,7 @@
       from.y = y;
       from.z = z;
       that.style.transform = ' translate3D('+ (x) +'px, '+ (y) +'px, '+ (z) +'px) ';
+      config.pos = { x:x, y:y, z:z };
     });
     tween.start();
     config.tween = tween;
@@ -120,7 +151,7 @@
       var y = iy + this.cy * dify ;
       var z = iz + this.cz * difz ;
       that.style.transform = ' translate3D('+ (x) +'px, '+ (y) +'px, '+ (z) +'px) ';
-      that.data(dataKey, { x:x, y:y, z:z });
+      config.pos = { x:x, y:y, z:z };
     });
     tween.start();
     config.tween = tween;
@@ -128,7 +159,7 @@
   }
   
   
-  $._normalElementCall('animPos', $.MODE_GETTER_FIRST, { x:0, y:0, z:0 });
+  $._normalElementCall('animConfig', $.MODE_GETTER_FIRST, null);
   $._normalElementCall('anim', $.MODE_SETTER);
   $.blockProperties();
 })($$);
